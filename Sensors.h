@@ -137,6 +137,7 @@ extern const Interface SINGLE_WIRE; //Собственный однопрово�
 extern const Interface ONE_WIRE; //Однопроводной протокол Dallas
 extern const Interface I2C; //I2C_2 (PC0, PC1)
 extern const Interface SPI; //SPI_1 (MOSI - 2, MISO - 3, CS - 4, SCK - 5)
+extern const Interface ADC; //ADC
 
 /* ============================= Датчик(и) ============================= */
 /**
@@ -329,4 +330,6 @@ const GPIO*
 #include "./sensors/HDC1080.h"
 #include "./sensors/MAX31855.h"
 #include "./sensors/MAX6675.h"
+#include "./interfaces/ADCSensor.h"
+#include "./sensors/ADC123.h"
 #endif

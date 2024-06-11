@@ -72,6 +72,11 @@ const Interface SPI = {
     .allocator = unitemp_spi_sensor_alloc,
     .mem_releaser = unitemp_spi_sensor_free,
     .updater = unitemp_spi_sensor_update};
+const Interface ADC = {
+    .name = "ADC",
+    .allocator = unitemp_adc_sensor_alloc,
+    .mem_releaser = unitemp_adc_sensor_free,
+    .updater = unitemp_adc_sensor_update};
 
 //Перечень интерфейсов подключения
 //static const Interface* interfaces[] = {&SINGLE_WIRE, &I2C, &ONE_WIRE, &SPI};
@@ -79,7 +84,8 @@ const Interface SPI = {
 static const SensorType* sensorTypes[] = {&DHT11,  &DHT12_SW,  &DHT20,      &DHT21,    &DHT22,
                                           &Dallas, &AM2320_SW, &AM2320_I2C, &HTU21x,   &AHT10,
                                           &SHT30,  &GXHT30,    &LM75,       &HDC1080,  &BMP180,
-                                          &BMP280, &BME280,    &BME680,     &MAX31855, &MAX6675};
+                                          &BMP280, &BME280,    &BME680,     &MAX31855, &MAX6675,
+                                          &ADC123};
 
 const SensorType* unitemp_sensors_getTypeFromInt(uint8_t index) {
     if(index > SENSOR_TYPES_COUNT) return NULL;
@@ -168,6 +174,11 @@ uint8_t unitemp_gpio_getAviablePortsCount(const Interface* interface, const GPIO
             //У I2C два фиксированых порта
             return 0;
         }
+
+        if(interface == &ADC) {
+            // TODO: Return actual ports available for ADC
+            return 1;
+        }
     }
     return aviable_ports_count;
 }
@@ -203,6 +214,10 @@ const GPIO*
              (gpio_interfaces_list[3] == NULL || gpio_interfaces_list[3] == &SPI))) {
             return NULL;
         }
+    }
+    if(interface == &ADC) {
+        // TODO: Return actual ports available for ADC
+        return unitemp_gpio_getFromIndex(0);
     }
 
     uint8_t aviable_index = 0;
@@ -438,7 +453,10 @@ bool unitemp_sensors_save(void) {
             uint8_t gpio_num = ((SPISensor*)sensor->instance)->CS_pin->num;
             stream_write_format(app->file_stream, "%d\n", gpio_num);
         }
-
+        if(sensor->type->interface == &ADC) {
+            uint8_t gpio_num = ((ADCSensor*)sensor->instance)->data_pin->num;
+            stream_write_format(app->file_stream, "%d\n", gpio_num);
+        }
         if(sensor->type->interface == &I2C) {
             stream_write_format(
                 app->file_stream, "%X\n", ((I2CSensor*)sensor->instance)->currentI2CAdr);
@@ -488,14 +506,14 @@ Sensor* unitemp_sensor_alloc(char* name, const SensorType* type, char* args) {
     Sensor* sensor = malloc(sizeof(Sensor));
     if(sensor == NULL) {
         FURI_LOG_E(APP_NAME, "Sensor %s allocation error", name);
-        return false;
+        return NULL;
     }
 
     //Выделение памяти под имя
     sensor->name = malloc(11);
     if(sensor->name == NULL) {
         FURI_LOG_E(APP_NAME, "Sensor %s name allocation error", name);
-        return false;
+        return NULL;
     }
     //Запись имени датчка
     strcpy(sensor->name, name);

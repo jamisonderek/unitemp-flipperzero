@@ -21,6 +21,7 @@
 #include "../interfaces/SingleWireSensor.h"
 #include "../interfaces/OneWireSensor.h"
 #include "../interfaces/I2CSensor.h"
+#include "../interfaces/ADCSensor.h"
 
 //Текущий вид
 static View* view;
@@ -304,13 +305,15 @@ void unitemp_SensorEdit_switch(Sensor* sensor) {
 
     //Порт подключения датчка (для one wire, SPI и single wire)
     if(sensor->type->interface == &ONE_WIRE || sensor->type->interface == &SINGLE_WIRE ||
-       sensor->type->interface == &SPI) {
+       sensor->type->interface == &SPI || sensor->type->interface == &ADC) {
         if(sensor->type->interface == &ONE_WIRE) {
             initial_gpio = ((OneWireSensor*)editable_sensor->instance)->bus->gpio;
         } else if(sensor->type->interface == &SINGLE_WIRE) {
             initial_gpio = ((SingleWireSensor*)editable_sensor->instance)->gpio;
         } else if(sensor->type->interface == &SPI) {
             initial_gpio = ((SPISensor*)editable_sensor->instance)->CS_pin;
+        } else if(sensor->type->interface == &ADC) {
+            initial_gpio = ((ADCSensor*)editable_sensor->instance)->data_pin;
         }
 
         uint8_t aviable_gpio_count =
